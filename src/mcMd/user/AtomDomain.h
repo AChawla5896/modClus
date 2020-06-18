@@ -1,0 +1,115 @@
+#ifndef MCMD_ATOM_DOMAIN_H
+#define MCMD_ATOM_DOMAIN_H
+
+/*
+* Simpatico - Simulation Package for Polymeric and Molecular Liquids
+*
+* Copyright 2010 - 2017, The Regents of the University of Minnesota
+* Distributed under the terms of the GNU General Public License.
+*/
+
+namespace McMd
+{
+
+   class Atom;
+
+   /**
+   * Molecule in a cluster.
+   *
+   * A cluster is defined by a linked list of ClusterLink objects.
+   */
+   struct AtomDomain
+   {
+
+   public:
+
+      /**
+      * Set to default state.
+      */
+      void clear();
+
+      /**
+      * Set pointer to associated molecule.
+      */
+      void setAtom(Atom& atom);
+
+      void setNeighborCount(int totalNeighbors, int selectNeighbors); 
+
+      /**
+      * Get associated molecule by reference.
+      */
+      Atom& atom() const;
+
+      /**
+      * Get pointer to next link in linked list.
+      */
+      int totalNeighbors() const;
+
+      /** 
+      * Get pointer to next link in linked list.
+      */
+      int selectNeighbors() const;
+
+      /**
+      * Get cluster identifier.
+      */
+      double domainPurity() const;
+
+   private:
+
+      /// Pointer to the associated molecule.
+      Atom* atomPtr_;
+
+      /// Pointer to the next link.
+      int totalNeighbors_;
+
+      /// Integer id of the associated cluster.
+      int selectNeighbors_;
+
+      double domainPurity_;
+
+   };
+
+   // Set ClusterLink to default null state.
+   inline 
+   void AtomDomain::clear()
+   {
+      atomPtr_ = 0;  
+      totalNeighbors_ = -1;
+      selectNeighbors_ = -1;
+      domainPurity_ = -1;
+   }
+
+   // Set pointer to associated Molecule.
+   inline
+   void AtomDomain::setAtom(Atom& atom)
+   {  atomPtr_ = &atom;  }
+
+   inline
+   Atom& AtomDomain::atom() const
+   {  return *atomPtr_; }
+
+   inline
+   void AtomDomain::setNeighborCount(int totalNeighbors, int selectNeighbors)
+   {  
+      totalNeighbors_ = totalNeighbors;
+      selectNeighbors_ = selectNeighbors;
+      // domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_) * 100.0;
+      domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_);
+   }
+
+   // Get the id of the associated cluster.
+   inline
+   int AtomDomain::totalNeighbors() const
+   {  return totalNeighbors_; }
+
+   inline
+   int AtomDomain::selectNeighbors() const
+   {  return selectNeighbors_; }
+
+   inline
+   double AtomDomain::domainPurity() const
+   {  return domainPurity_; }
+
+}
+#endif
