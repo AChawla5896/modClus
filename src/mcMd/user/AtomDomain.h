@@ -94,8 +94,13 @@ namespace McMd
    {  
       totalNeighbors_ = totalNeighbors;
       selectNeighbors_ = selectNeighbors;
-      // domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_) * 100.0;
-      domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_);
+      if (totalNeighbors_ == 0 && selectNeighbors_ == 0){
+         domainPurity_ = 0;
+      }
+      else {
+         // domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_) * 100.0;
+         domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_);
+      }   
    }
 
    // Get the id of the associated cluster.

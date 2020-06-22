@@ -117,6 +117,7 @@ namespace McMd
       ar >> nSample_;
 
       isInitialized_ = true;
+      // isInitialized_ = false;
    }
 
    /*

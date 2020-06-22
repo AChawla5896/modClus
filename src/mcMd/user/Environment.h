@@ -121,7 +121,7 @@ namespace McMd
    * Serialize to/from an archive.
    */
    template <class Archive>
-   void ClusterHistogram::serialize(Archive& ar, const unsigned int version)
+   void Environment::serialize(Archive& ar, const unsigned int version)
    {
       Analyzer::serialize(ar, version);
       ar & speciesId_;

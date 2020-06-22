@@ -35,7 +35,6 @@ namespace McMd
     /// Constructor.
    Environment::Environment(System& system) 
     : SystemAnalyzer<System>(system),
-      identifier_(system),
       outputFile_(),
       speciesId_(),
       atomTypeId_(),
@@ -70,31 +69,12 @@ namespace McMd
          UTIL_THROW("Negative cutoff");
       }
 
-
-      // Allocate DArray of atomDomains containing number of select Species also--------------------------------------------
-
-      System::MoleculeIterator molIter;
-      Molecule::AtomIterator atomIter;
-      system().begin(speciesId_, molIter);
-      int n = 0;
-
-      for ( ; molIter.notEnd(); ++molIter) {
-         for (molIter->begin(atomIter); atomIter.notEnd(); ++atomIter) {
-            if (atomIter->typeId() == atomTypeId_) {
-               n++;
-            }
-         }
-         break; 
-      }  
-
-      countType_ = n * system().nMolecule(speciesId_); 
-      atomEnv_.allocate(countType_);
-
       // Generate cell list as well
 
       int atomCapacity = system().simulation().atomCapacity();
       cellList_.setAtomCapacity(atomCapacity);
 
+      std::cout <<atomCapacity;
       isInitialized_ = true;
    }
 
@@ -126,27 +106,6 @@ namespace McMd
 
       ar >> nSample_;
 
-
-
-      // Allocate DArray containing number of select Species also--------------------------------------------
-
-      System::MoleculeIterator molIter;
-      Molecule::AtomIterator atomIter;
-      system().begin(speciesId_, molIter);
-      int n = 0;
-
-      for ( ; molIter.notEnd(); ++molIter) {
-         for (molIter->begin(atomIter); atomIter.notEnd(); ++atomIter) {
-            if (atomIter->typeId() == atomTypeId_) {
-               n++;
-            }   
-         }   
-         break; 
-      }   
-
-      countType_ = n * system().nMolecule(speciesId_); 
-      atomEnv_.allocate(countType_);
-
       // Generate cell list as well
     
       int atomCapacity = system().simulation().atomCapacity();
@@ -174,6 +133,28 @@ namespace McMd
    void Environment::setup() 
    {  
       if (!isInitialized_) UTIL_THROW("Object is not initialized");
+
+      System::MoleculeIterator molIter;
+      Molecule::AtomIterator atomIter;
+      system().begin(speciesId_, molIter);
+      int n = 0;
+
+
+      for ( ; molIter.notEnd(); ++molIter) {
+      std::cout <<"Yahin hu main";
+         for (molIter->begin(atomIter); atomIter.notEnd(); ++atomIter) {
+            if (atomIter->typeId() == atomTypeId_) {
+               n++;
+               std::cout <<n<<"\n";
+            }
+         }
+          break;
+      }
+
+      countType_ = n * system().nMolecule(speciesId_);
+      atomEnv_.allocate(countType_);
+      std::cout <<"countType_";
+      
       nSample_ = 0;
    }
 
@@ -189,14 +170,14 @@ namespace McMd
          cellList_.setup(system().boundary(), cutoff_);
 
          // Set variables to initial state
-         for (int i = 0; i < links_.capacity(); ++i) {
+         for (int i = 0; i < countType_; ++i) {
             atomEnv_[i].clear();
          }
 
          CellList::NeighborArray neighborArray;
+         Boundary& boundary = system().boundary();
          System::MoleculeIterator molIter;
          Molecule::AtomIterator atomIter;
-         Species* speciesPtr;i
          Atom* otherAtomPtr;
          double cutoffSq = cutoff_*cutoff_;
          double rsq;   
@@ -207,14 +188,10 @@ namespace McMd
          // Build the cellList, associate Atom with AtomDomain.
          // Iterate over molecules of species speciesId_
      
-         for (int iSpecies = 0; iSpecies < nSpecies(); ++iSpecies) {
+         for (int iSpecies = 0; iSpecies < system().simulation().nSpecies(); ++iSpecies) {
             system().begin(iSpecies, molIter);
             for ( ; molIter.notEnd(); ++molIter) {
-               
-               speciesPtr = molIter->species();
-
                for (molIter->begin(atomIter); atomIter.notEnd(); ++atomIter) {
-               
                   // Build the cellList     
                   system().boundary().shift(atomIter->position());
                   cellList_.addAtom(*atomIter);
