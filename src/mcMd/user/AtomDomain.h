@@ -33,7 +33,7 @@ namespace McMd
       */
       void setAtom(Atom& atom);
 
-      void setNeighborCount(int totalNeighbors, int selectNeighbors); 
+      void setNeighborCount(double totalNeighbors, double selectNeighbors); 
 
       /**
       * Get associated molecule by reference.
@@ -61,10 +61,10 @@ namespace McMd
       Atom* atomPtr_;
 
       /// Pointer to the next link.
-      int totalNeighbors_;
+      double totalNeighbors_;
 
       /// Integer id of the associated cluster.
-      int selectNeighbors_;
+      double selectNeighbors_;
 
       double domainPurity_;
 
@@ -75,9 +75,9 @@ namespace McMd
    void AtomDomain::clear()
    {
       atomPtr_ = 0;  
-      totalNeighbors_ = -1;
-      selectNeighbors_ = -1;
-      domainPurity_ = -1;
+      totalNeighbors_ = -1.0;
+      selectNeighbors_ = -1.0;
+      domainPurity_ = -1.0;
    }
 
    // Set pointer to associated Molecule.
@@ -90,7 +90,7 @@ namespace McMd
    {  return *atomPtr_; }
 
    inline
-   void AtomDomain::setNeighborCount(int totalNeighbors, int selectNeighbors)
+   void AtomDomain::setNeighborCount(double totalNeighbors, double selectNeighbors)
    {  
       totalNeighbors_ = totalNeighbors;
       selectNeighbors_ = selectNeighbors;
@@ -99,7 +99,7 @@ namespace McMd
       }
       else {
          // domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_) * 100.0;
-         domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_);
+         domainPurity_ = ( selectNeighbors_ /  totalNeighbors_);
       }   
    }
 

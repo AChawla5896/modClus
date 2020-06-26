@@ -25,6 +25,7 @@
 #include <util/space/Tensor.h>
 #include <util/containers/DArray.h>
 #include <sstream>
+#include <cmath>
 
 namespace McMd
 {
@@ -191,8 +192,9 @@ namespace McMd
          double cutoffSq = cutoff_*cutoff_;
          double rsq;   
          int thisMolId, otherMolId;
-         int neighborCount = 0;
-         int selectNeighborCount = 0; 
+         double neighborCount = 0.0;
+         double selectNeighborCount = 0.0;
+         double interMol = 0.0; 
 
          // Build the cellList, associate Atom with AtomDomain.
          // Iterate over molecules of species speciesId_
@@ -236,10 +238,16 @@ namespace McMd
                            rsq = boundary.distanceSq(atomIter->position(),
                                                      otherAtomPtr->position());
                            if (rsq < cutoffSq) {
-                              neighborCount++;  
+
+
+                              interMol = 1/ (1+exp(12*(sqrt(rsq)/cutoff_))); 
+
+                              neighborCount = neighborCount + interMol;  
                               if (otherAtomPtr->typeId() == atomTypeId_){
-                                 selectNeighborCount++;
-                              }                 
+                                 selectNeighborCount = selectNeighborCount + interMol;
+                              }
+
+                              interMol = 0;                 
                            }
                         }
                      }
@@ -252,8 +260,8 @@ namespace McMd
                   iAtom++;
 
                   // Re-initializing neighborCount and selectNeighborCount
-                  neighborCount = 0;
-                  selectNeighborCount = 0;   
+                  neighborCount = 0.0;
+                  selectNeighborCount = 0.0;   
 
                }
             }   
@@ -261,14 +269,14 @@ namespace McMd
 
 
 
-         fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
+         //fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
          //Writes all of the clusters and their component molecules
          for (iAtom = 0; iAtom < countType_; iAtom++) {
-             outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity();
-             outputFile_ << "\n";
+           //  outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity();
+           //  outputFile_ << "\n";
              hist_.sample(atomEnv_[iAtom].domainPurity());
          }
-         outputFile_.close();
+         //outputFile_.close();
 
       }
    }
