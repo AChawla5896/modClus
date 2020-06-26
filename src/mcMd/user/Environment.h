@@ -11,8 +11,9 @@
 #include <mcMd/analyzers/base/SystemAnalyzer.h>           // base class templ
 #include <mcMd/simulation/System.h>                  // class templ param
 #include <mcMd/user/AtomDomain.h> // member
-#include <util/containers/DArray.h>              // member template
 #include <mcMd/neighbor/CellList.h>              // member
+#include <util/containers/DArray.h>              // member template
+#include <util/accumulators/Distribution.h>       // member
 
 namespace McMd
 {
@@ -98,6 +99,9 @@ namespace McMd
       /// Clusters species type
       int  atomTypeId_;
 
+      /// Histogram distribution of domain purity
+      Distribution hist_;
+
       /// Total number of atoms of the selected type on the selected species
 
       int countType_;
@@ -105,11 +109,8 @@ namespace McMd
       /// Distance cutoff
       double cutoff_;
 
-      /// Number of configurations dumped thus far (first dump is zero).
-      long  nSample_;
-
       DArray<AtomDomain> atomEnv_;
-
+ 
       /// Has readParam been called?
       bool  isInitialized_;
 
@@ -127,7 +128,7 @@ namespace McMd
       ar & speciesId_;
       ar & atomTypeId_;
       ar & cutoff_;
-      ar & nSample_;
+      ar & hist_;
    }
 
 }

@@ -35,11 +35,11 @@ namespace McMd
     /// Constructor.
    Environment::Environment(System& system) 
     : SystemAnalyzer<System>(system),
+      hist_(),
       outputFile_(),
       speciesId_(),
       atomTypeId_(),
       cutoff_(),
-      nSample_(0),
       isInitialized_(false)
    {  setClassName("Environment"); }
 
@@ -74,6 +74,10 @@ namespace McMd
       int atomCapacity = system().simulation().atomCapacity();
       cellList_.setAtomCapacity(atomCapacity);
 
+
+      // Initialize histogram over here, and clear histogram as well
+ 
+
       std::cout <<atomCapacity;
       isInitialized_ = true;
    }
@@ -104,7 +108,7 @@ namespace McMd
          UTIL_THROW("Negative cutoff");
       }
 
-      ar >> nSample_;
+      ar >> hist_;
 
       // Generate cell list as well
     
@@ -124,7 +128,7 @@ namespace McMd
       ar & speciesId_;
       ar & atomTypeId_;
       ar & cutoff_;
-      ar & nSample_;
+      ar & hist_;
    }
 
    /*
@@ -154,8 +158,13 @@ namespace McMd
       countType_ = n * system().nMolecule(speciesId_);
       atomEnv_.allocate(countType_);
       std::cout <<"countType_";
-      
-      nSample_ = 0;
+
+
+      // min value = 0, max value = 1 and number of bins = 100
+      // Can think of reading number of bins from parameter file 
+      // as well
+      hist_.setParam(0.0, 1.0, 100); 
+      hist_.clear();     
    }
 
    /* 
@@ -257,6 +266,7 @@ namespace McMd
          for (iAtom = 0; iAtom < countType_; iAtom++) {
              outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity();
              outputFile_ << "\n";
+             hist_.sample(atomEnv_[iAtom].domainPurity());
          }
          outputFile_.close();
 
@@ -269,20 +279,22 @@ namespace McMd
    void Environment::output() 
    {
       // Write parameter file
-      // fileMaster().openOutputFile(outputFileName(".prm"), outputFile_);
-      // writeParam(outputFile_);
-      // outputFile_.close();
+       fileMaster().openOutputFile(outputFileName(".prm"), outputFile_);
+       writeParam(outputFile_);
+       outputFile_.close();
 
       // Write histogram output
-      // fileMaster().openOutputFile(outputFileName(".hist"), outputFile_);
-      // hist_.output(outputFile_);
-      // int min = hist_.min();
+       fileMaster().openOutputFile(outputFileName(".hist"), outputFile_);
+       hist_.output(outputFile_);
+      // double min = hist_.min();
+      // double binWidth = hist_.binWidth();
+      // outputFile_ << Dbl(min);
       // int nBin = hist_.nBin();
       // for (int i = 0; i < nBin; ++i) {
-      //    outputFile_ << Int(i + min) << "  " 
-      //                <<  Dbl(double(hist_.data()[i])/double(nSample_)) << "\n";
+      //    outputFile_ <<  Dbl((i * binWidth) + min) << "  " 
+      //                <<  Dbl(hist_.data()[i]/nSample_) << "\n";
       // }
-      // outputFile_.close();
+       outputFile_.close();
    }
 
 }
