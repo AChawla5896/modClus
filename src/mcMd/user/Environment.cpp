@@ -164,7 +164,7 @@ namespace McMd
       // min value = 0, max value = 1 and number of bins = 100
       // Can think of reading number of bins from parameter file 
       // as well
-      hist_.setParam(0.0, 1.0, 100); 
+      hist_.setParam(0.0, 1.0, 10000); 
       hist_.clear();     
    }
 
@@ -240,7 +240,7 @@ namespace McMd
                            if (rsq < cutoffSq) {
 
 
-                              interMol = 1/ (1+exp(12*(sqrt(rsq)/cutoff_))); 
+                              interMol = 1/ (1+exp(12*((sqrt(rsq)-cutoff_)/cutoff_))); 
 
                               neighborCount = neighborCount + interMol;  
                               if (otherAtomPtr->typeId() == atomTypeId_){
