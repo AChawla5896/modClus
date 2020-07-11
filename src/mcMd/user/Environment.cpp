@@ -164,7 +164,7 @@ namespace McMd
       // min value = 0, max value = 1 and number of bins = 100
       // Can think of reading number of bins from parameter file 
       // as well
-      hist_.setParam(0.0, 1.0, 10000); 
+      hist_.setParam(-0.01, 1.01, 102); 
       hist_.clear();     
    }
 
@@ -177,7 +177,7 @@ namespace McMd
 
          // Initialize all data structures:
          // Setup a grid of empty cells
-         cellList_.setup(system().boundary(), cutoff_);
+         cellList_.setup(system().boundary(), cutoff_+0.4);
 
          // Set variables to initial state
          for (int i = 0; i < countType_; ++i) {

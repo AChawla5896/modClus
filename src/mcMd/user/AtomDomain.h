@@ -95,7 +95,7 @@ namespace McMd
       totalNeighbors_ = totalNeighbors;
       selectNeighbors_ = selectNeighbors;
       if (totalNeighbors_ == 0 && selectNeighbors_ == 0){
-         domainPurity_ = 0;
+         //domainPurity_ = 0;
       }
       else {
          // domainPurity_ = ((double) selectNeighbors_ / (double) totalNeighbors_) * 100.0;
