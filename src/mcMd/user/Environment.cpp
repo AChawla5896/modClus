@@ -163,7 +163,7 @@ namespace McMd
       // min value = 0, max value = 1 and number of bins = 100
       // Can think of reading number of bins from parameter file 
       // as well
-      hist_.setParam(0.0, 1.0, 100); 
+      hist_.setParam(-0.02, 1.02, 104); 
       hist_.clear();     
    }
 
@@ -176,7 +176,7 @@ namespace McMd
 
          // Initialize all data structures:
          // Setup a grid of empty cells
-         cellList_.setup(system().boundary(), cutoff_);
+         cellList_.setup(system().boundary(), (cutoff_ + 0.4));
 
          // Set variables to initial state
          for (int i = 0; i < countType_; ++i) {
@@ -264,7 +264,7 @@ namespace McMd
          fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
          //Writes all of the clusters and their component molecules
          for (iAtom = 0; iAtom < countType_; iAtom++) {
-             outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity();
+             outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity()<< "    "  << int( (atomEnv_[iAtom].domainPurity() + 0.02)/0.01 );
              outputFile_ << "\n";
              hist_.sample(atomEnv_[iAtom].domainPurity());
          }
