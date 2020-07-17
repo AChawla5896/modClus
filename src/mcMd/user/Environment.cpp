@@ -269,16 +269,16 @@ namespace McMd
 
 
 
-         fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
+         //fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
          //Writes all of the clusters and their component molecules
          for (iAtom = 0; iAtom < countType_; iAtom++) {
            //  outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity();
            //  outputFile_ << "\n";
-             outputFile_ << atomEnv_[iAtom].atom().id() << "    " << atomEnv_[iAtom].domainPurity()<< "    "  << int( (atomEnv_[iAtom].domainPurity() + 0.01)/0.01 );
-             outputFile_ << "\n";
+           //  outputFile_ << atomEnv_[iAtom].atom().id() << "    " << atomEnv_[iAtom].domainPurity()<< "    "  << int( (atomEnv_[iAtom].domainPurity() + 0.01)/0.01 );
+             //outputFile_ << "\n";
              hist_.sample(atomEnv_[iAtom].domainPurity());
          }
-         outputFile_.close();
+        // outputFile_.close();
 
       }
    }
