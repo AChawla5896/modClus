@@ -1,5 +1,5 @@
-#ifndef MCMD_ENVIRONMENT_CPP
-#define MCMD_ENVIRONMENT_CPP
+#ifndef HOT_BEAD_CLUSTERING_CPP
+#define HOT_BEAD_CLUSTERING_CPP
 
 /*
 * Simpatico - Simulation Package for Polymeric and Molecular Liquids
@@ -8,11 +8,12 @@
 * Distributed under the terms of the GNU General Public License.
 */
 
-#include "Environment.h"
+#include "hotBeadClustering.h"
 #include <mcMd/simulation/System.h>
 #include <mcMd/simulation/Simulation.h>
 #include <mcMd/chemistry/Molecule.h>
 #include <mcMd/chemistry/Atom.h>
+
 
 #include <simp/boundary/Boundary.h>
 #include <simp/species/Species.h>
@@ -33,18 +34,24 @@ namespace McMd
    using namespace Simp;
 
     /// Constructor.
-   Environment::Environment(System& system) 
+   hotBeadClustering::hotBeadClustering(System& system) 
     : SystemAnalyzer<System>(system),
+      identifier_(system),
       hist_(),
+      clusHist_(),
       outputFile_(),
       speciesId_(),
       atomTypeId_(),
       cutoff_(),
+      cutoffPurity_(),
+      clusHistMin_(),
+      clusHistMax_(),
+      nSample_(0),
       isInitialized_(false)
-   {  setClassName("Environment"); }
+   {  setClassName("hotBeadClustering"); }
 
    /// Read parameters from file, and allocate arrays.
-   void Environment::readParameters(std::istream& in) 
+   void hotBeadClustering::readParameters(std::istream& in) 
    {  
       readInterval(in);
       readOutputFileName(in);
@@ -69,14 +76,22 @@ namespace McMd
          UTIL_THROW("Negative cutoff");
       }
 
+      read<double>(in, "purity cutoff", cutoffPurity_);
+      if (cutoffPurity_ < 0) {
+         UTIL_THROW("Negative cutoff");
+      }  
+
+      identifier_.initialize(speciesId_, atomTypeId_, cutoff_);
+
+      read<int>(in,"histMin", clusHistMin_);
+      read<int>(in,"histMax", clusHistMax_);
+      clusHist_.setParam(clusHistMin_, clusHistMax_);
+      clusHist_.clear();
+
       // Generate cell list as well
 
       int atomCapacity = system().simulation().atomCapacity();
       cellList_.setAtomCapacity(atomCapacity);
-
-
-      // Initialize histogram over here, and clear histogram as well
- 
 
       std::cout <<atomCapacity;
       isInitialized_ = true;
@@ -85,7 +100,7 @@ namespace McMd
    /*
    * Load state from an archive.
    */
-   void Environment::loadParameters(Serializable::IArchive& ar)
+   void hotBeadClustering::loadParameters(Serializable::IArchive& ar)
    {
       // Load interval and outputFileName
       Analyzer::loadParameters(ar);
@@ -108,7 +123,20 @@ namespace McMd
          UTIL_THROW("Negative cutoff");
       }
 
+      loadParameter<double>(ar, "purity cutoff", cutoffPurity_);
+      if (cutoffPurity_ < 0) {
+         UTIL_THROW("Negative cutoff");
+      }
+
       ar >> hist_;
+
+      loadParameter<int>(ar, "histMin", clusHistMin_);
+      loadParameter<int>(ar, "histMax", clusHistMax_);
+      ar >> clusHist_;
+
+      ar >> nSample_;
+
+      identifier_.initialize(speciesId_, atomTypeId_, cutoff_);
 
       // Generate cell list as well
     
@@ -122,19 +150,24 @@ namespace McMd
    /*
    * Save state to archive.
    */
-   void Environment::save(Serializable::OArchive& ar)
+   void hotBeadClustering::save(Serializable::OArchive& ar)
    {
       Analyzer::save(ar);
       ar & speciesId_;
       ar & atomTypeId_;
       ar & cutoff_;
+      ar & cutoffPurity_;
       ar & hist_;
+      ar & clusHistMin_;
+      ar & clusHistMax_;
+      ar & clusHist_;
+      ar & nSample_;
    }
 
    /*
    * Clear accumulators.
    */
-   void Environment::setup() 
+   void hotBeadClustering::setup() 
    {  
       if (!isInitialized_) UTIL_THROW("Object is not initialized");
 
@@ -159,18 +192,24 @@ namespace McMd
       atomEnv_.allocate(countType_);
       std::cout <<"countType_";
 
-
+      isHot_.allocate(system().nAtom());
+      for (int iAtom = 0; iAtom < system().nAtom(); iAtom++) {
+         isHot_ [iAtom] = 0;
+      }
       // min value = 0, max value = 1 and number of bins = 100
       // Can think of reading number of bins from parameter file 
       // as well
       hist_.setParam(-0.02, 1.02, 104); 
-      hist_.clear();     
+      hist_.clear();  
+
+      clusHist_.clear();
+      nSample_ = 0;   
    }
 
    /* 
    * Sample data by calling ClusterIdentifier::identifyClusters.
    */
-   void Environment::sample(long iStep) 
+   void hotBeadClustering::sample(long iStep) 
    { 
       if (isAtInterval(iStep)) {
 
@@ -240,7 +279,7 @@ namespace McMd
                               if (otherAtomPtr->typeId() == atomTypeId_){
                                  selectNeighborCount++;
                               }
-
+                 
                            }
                         }
                      }
@@ -259,25 +298,64 @@ namespace McMd
                }
             }   
          }
-
-
-
-         fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
-         //Writes all of the clusters and their component molecules
+    
          for (iAtom = 0; iAtom < countType_; iAtom++) {
-             outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity()<< "    "  << int( (atomEnv_[iAtom].domainPurity() + 0.02)/0.01 );
-             outputFile_ << "\n";
-             hist_.sample(atomEnv_[iAtom].domainPurity());
+            if (atomEnv_[iAtom].domainPurity() > cutoffPurity_) {            
+               isHot_[(atomEnv_[iAtom].atom()).id()] = 1;
+            }
          }
+
+         identifier_.identifyClusters(isHot_);
+
+
+         for (int i = 0; i < identifier_.nCluster(); i++) {
+             clusHist_.sample(identifier_.cluster(i).size());
+         }
+         ++nSample_;
+         fileMaster().openOutputFile(outputFileName(".clusters"+toString(iStep)),outputFile_);
+         //Writes all of the clusters and their component molecules
+         Cluster thisCluster;
+         ClusterLink* thisClusterStart;
+         ClusterLink* next;
+         Molecule thisMolecule;
+         //Loop over each cluster
+         for (int i = 0; i < identifier_.nCluster(); i++) {
+             thisCluster = identifier_.cluster(i);
+             thisClusterStart = thisCluster.head();
+             outputFile_ << i << "      " ;
+             //List out every molecule in that cluster
+             while (thisClusterStart) {
+                next = thisClusterStart->next();
+                thisMolecule = thisClusterStart->molecule();
+                outputFile_ << thisMolecule.id() << "  ";
+                thisClusterStart = next;
+             }   
+             outputFile_ << "\n";
+         }   
          outputFile_.close();
 
+
+        // fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
+         //Writes all of the clusters and their component molecules
+        // for (iAtom = 0; iAtom < countType_; iAtom++) {
+        //     outputFile_ << atomEnv_[iAtom].atom().id() << "	" << atomEnv_[iAtom].domainPurity()<< "    "  << int( (atomEnv_[iAtom].domainPurity() + 0.02)/0.01 );
+        //     outputFile_ << "\n";
+        //     hist_.sample(atomEnv_[iAtom].domainPurity());
+        // }
+         //outputFile_.close();
+
+      for (int iAtom = 0; iAtom < system().nAtom(); iAtom++) {
+         isHot_ [iAtom] = 0;
+      } 
+
       }
+      // Reinitialize isHot to 0
    }
 
    /*
    * Output results to file after simulation is completed.
    */
-   void Environment::output() 
+   void hotBeadClustering::output() 
    {
       // Write parameter file
        fileMaster().openOutputFile(outputFileName(".prm"), outputFile_);
@@ -285,7 +363,7 @@ namespace McMd
        outputFile_.close();
 
       // Write histogram output
-       fileMaster().openOutputFile(outputFileName(".hist"), outputFile_);
+       fileMaster().openOutputFile(outputFileName(".domain"), outputFile_);
        hist_.output(outputFile_);
       // double min = hist_.min();
       // double binWidth = hist_.binWidth();
@@ -295,7 +373,14 @@ namespace McMd
       //    outputFile_ <<  Dbl((i * binWidth) + min) << "  " 
       //                <<  Dbl(hist_.data()[i]/nSample_) << "\n";
       // }
-       outputFile_.close();
+      fileMaster().openOutputFile(outputFileName(".hist"), outputFile_);
+      int min = clusHist_.min();
+      int nBin = clusHist_.nBin();
+      for (int i = 0; i < nBin; ++i) {
+         outputFile_ << Int(i + min) << "  "
+                     <<  Dbl(double(clusHist_.data()[i])/double(nSample_)) << "\n";
+      }
+      outputFile_.close();
    }
 
 }

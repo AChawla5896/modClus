@@ -8,6 +8,8 @@
 * Distributed under the terms of the GNU General Public License.
 */
 
+#include <vector>
+
 namespace McMd
 {
 
@@ -115,6 +117,5 @@ namespace McMd
    inline
    double AtomDomain::domainPurity() const
    {  return domainPurity_; }
-
 }
 #endif
