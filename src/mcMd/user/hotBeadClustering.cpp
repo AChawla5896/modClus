@@ -76,7 +76,7 @@ namespace McMd
          UTIL_THROW("Negative cutoff");
       }
 
-      read<double>(in, "purity cutoff", cutoffPurity_);
+      read<double>(in, "cutoff_purity", cutoffPurity_);
       if (cutoffPurity_ < 0) {
          UTIL_THROW("Negative cutoff");
       }  
@@ -322,7 +322,7 @@ namespace McMd
          for (int i = 0; i < identifier_.nCluster(); i++) {
              thisCluster = identifier_.cluster(i);
              thisClusterStart = thisCluster.head();
-             outputFile_ << i << "      " ;
+             outputFile_ << i<<"  ("<<identifier_.cluster(i).size()<<")  "<< "       " ;
              //List out every molecule in that cluster
              while (thisClusterStart) {
                 next = thisClusterStart->next();
@@ -333,6 +333,38 @@ namespace McMd
              outputFile_ << "\n";
          }   
          outputFile_.close();
+
+
+         fileMaster().openOutputFile(outputFileName(".COMs"+toString(iStep)),outputFile_);
+         //comArray;
+         Vector clusterCOM;
+         Vector r0; 
+         Vector dr; 
+         Tensor moment;
+         Tensor rgDyad;
+         DArray<Vector> allCOMs;
+         DArray<Tensor> allMoments;
+         allCOMs.allocate(identifier_.nCluster());
+         allMoments.allocate(identifier_.nCluster());
+         for (int i = 0; i < identifier_.nCluster(); i++) {
+             thisCluster = identifier_.cluster(i);
+             outputFile_ << i<<"  ("<<identifier_.cluster(i).size()<<")  "<< "       " ;
+             //For that cluster, calculate the center of mass
+             clusterCOM = thisCluster.clusterCOM(atomTypeId_, system().boundary());
+             outputFile_ << clusterCOM;
+             outputFile_ << "\n";
+             allCOMs[i] = clusterCOM;
+             //Calculate Rg
+             moment = thisCluster.momentTensor(atomTypeId_, system().boundary());
+             allMoments[i] = moment;
+         }
+         outputFile_.close();
+         fileMaster().openOutputFile(outputFileName(".momentTensors"+toString(iStep)),outputFile_);
+         for (int i = 0; i < identifier_.nCluster(); i++) {
+             outputFile_ << i<<"  ("<<identifier_.cluster(i).size()<<")  "<< "       "<< allMoments[i] << "\n";
+         }
+         outputFile_.close();
+
 
 
         // fileMaster().openOutputFile(outputFileName(".env"+toString(iStep)),outputFile_);
